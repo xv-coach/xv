@@ -75,6 +75,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -161,11 +162,22 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
-STATIC_ROOT = os.environ.get('DJANGO_STATIC_ROOT', '/static')
+STATIC_ROOT = os.environ.get('DJANGO_STATIC_ROOT', str(BASE_DIR.parent / 'static'))
 STATIC_URL = '/static/'
 
+# Static files are served by WhiteNoise from STATIC_ROOT (run collectstatic).
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+    },
+}
+
 # Security settings for non-debug deployments (TLS is expected to terminate
-# in front of nginx; adjust via environment variables if needed).
+# at a reverse proxy / load balancer in front of gunicorn; adjust via
+# environment variables if needed).
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = env_bool('DJANGO_SECURE_COOKIES', default=True)

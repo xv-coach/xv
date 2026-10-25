@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:18
+        image: postgres:18-alpine
         env:
           POSTGRES_DB: xv_rugby
           POSTGRES_USER: xv_rugby
@@ -55,7 +55,9 @@ jobs:
       - name: Migrate
         run: uv run python manage.py migrate --noinput
       - name: Test
-        run: uv run python manage.py test
+        run: uv run pytest --create-db
+      - name: Type check
+        run: uv run mypy .
       - name: Ruff lint
         run: uv run ruff check .
       - name: Ruff format

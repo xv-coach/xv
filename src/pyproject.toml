@@ -7,12 +7,19 @@ license = "MIT"
 requires-python = ">=3.14,<3.15"
 dependencies = [
     "django>=6.1.2,<6.2",
+    "gunicorn>=26.2.0,<27",
     "psycopg[binary]>=3.3.6,<4",
-    "uwsgi>=2.0.31,<2.1",
+    "whitenoise>=6.12.0,<7",
 ]
 
 [dependency-groups]
 dev = [
+    "django-stubs>=6.1.2",
+    "model-bakery>=1.24.2",
+    "mypy>=2.4.0",
+    "pre-commit>=4.7.0",
+    "pytest>=9.1.1",
+    "pytest-django>=4.14.0",
     "ruff>=0.17.2",
 ]
 
@@ -33,3 +40,31 @@ known-first-party = ["common", "master", "member", "match", "xv_rugby"]
 
 [tool.ruff.format]
 quote-style = "single"
+
+[tool.mypy]
+python_version = "3.14"
+plugins = ["mypy_django_plugin.main"]
+# Non-strict for now: legacy code is checked but not required to be annotated.
+check_untyped_defs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+exclude = ["/migrations/"]
+
+[[tool.mypy.overrides]]
+module = ["common.*"]
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["model_bakery.*"]
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "xv_rugby.settings"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "xv_rugby.settings"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = ["--strict-markers", "--reuse-db"]
+# WhiteNoise warns when STATIC_ROOT does not exist (collectstatic not run).
+filterwarnings = ["ignore:No directory at:UserWarning"]

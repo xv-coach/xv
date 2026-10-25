@@ -1,6 +1,7 @@
 from django.apps import AppConfig
+from django.utils.translation import gettext_lazy as _
 
 
 class MasterConfig(AppConfig):
     name = 'master'
-    verbose_name = 'マスターデータ'
+    verbose_name = _('マスターデータ')
