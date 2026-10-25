@@ -66,3 +66,5 @@ DJANGO_SETTINGS_MODULE = "xv_rugby.settings"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = ["--strict-markers", "--reuse-db"]
+# WhiteNoise warns when STATIC_ROOT does not exist (collectstatic not run).
+filterwarnings = ["ignore:No directory at:UserWarning"]
