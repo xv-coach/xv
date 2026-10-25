@@ -1,24 +1,24 @@
-version: 2
+version: 2.1
 jobs:
   build:
-    machine: true
+    machine:
+      image: ubuntu-2404:current
     steps:
       - checkout
       - run:
           name: Copy .env File
           command: cp .env.testing .env
       - run:
-          name: Build Docker Image
-          command: docker-compose up -d --build
+          name: Build and start containers
+          command: docker compose up -d --build --wait postgres django
       - run:
-          name: Stop Docker Image
-          command: docker-compose stop
-      - run:
-          name: Up Docker Image
-          command: docker-compose up -d
-      - run:
-          name: Run tests
+          name: Run checks and tests
           command: |
-            docker-compose exec django python manage.py migrate
-            docker-compose exec django python manage.py test
-
+            docker compose exec django python manage.py check
+            docker compose exec django python manage.py makemigrations --check --dry-run
+            docker compose exec django python manage.py migrate --noinput
+            docker compose exec django python manage.py test
+workflows:
+  build:
+    jobs:
+      - build
