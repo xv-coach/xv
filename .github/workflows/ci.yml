@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: xv_rugby
+          POSTGRES_USER: xv_rugby
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U xv_rugby -d xv_rugby"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Dummy CI-only values, not secrets.
+      DJANGO_SECRET_KEY: ci-only-not-a-secret-key-do-not-use-anywhere-else
+      DJANGO_DEBUG: "1"
+      DJANGO_STATIC_ROOT: ${{ github.workspace }}/static
+      POSTGRES_DB: xv_rugby
+      POSTGRES_USER: xv_rugby
+      POSTGRES_PASSWORD: ci-only-password
+      DB_HOST: localhost
+      DB_PORT: "5432"
+    defaults:
+      run:
+        working-directory: src
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "0.13.5"
+          python-version: "3.14"
+          enable-cache: true
+          cache-dependency-glob: src/uv.lock
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Django check
+        run: uv run python manage.py check
+      - name: Check for missing migrations
+        run: uv run python manage.py makemigrations --check --dry-run
+      - name: Migrate
+        run: uv run python manage.py migrate --noinput
+      - name: Test
+        run: uv run python manage.py test
+      - name: Ruff lint
+        run: uv run ruff check .
+      - name: Ruff format
+        run: uv run ruff format --check .

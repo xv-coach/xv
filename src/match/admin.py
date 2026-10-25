@@ -1,18 +1,18 @@
 from django.contrib import admin
 
-from .models import (
-    TeamOnMatch,
-    StaffOnMatch,
-    PlayerOnMatch,
-    Match,
-    Half,
-    MatchPatternedEvent,
-    MatchSwitchEvent,
-    MatchScoringEvent,
-    MatchFoulEvent,
-)
-
 from common.admin import BaseAdmin, BaseTabularInline
+
+from .models import (
+    Half,
+    Match,
+    MatchFoulEvent,
+    MatchPatternedEvent,
+    MatchScoringEvent,
+    MatchSwitchEvent,
+    PlayerOnMatch,
+    StaffOnMatch,
+    TeamOnMatch,
+)
 
 
 class StaffOnMatchInline(BaseTabularInline):

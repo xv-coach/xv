@@ -1,8 +1,8 @@
 from django.contrib import admin
 
-from .models import TeamGroup, Team, PlayerProfile, Member
-
 from common.admin import BaseAdmin, BaseTabularInline
+
+from .models import Member, PlayerProfile, Team, TeamGroup
 
 
 class TeamInline(BaseTabularInline):

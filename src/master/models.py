@@ -126,4 +126,3 @@ class FoulMethod(BaseModel):
     class Meta:
         verbose_name_plural = '反則'
         db_table = 'rugby_foul_method'
-
