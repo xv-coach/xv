@@ -43,7 +43,7 @@ memory: project
 
 ### 5. コードスタイル
 
-- 新規・変更ファイルが `uv run ruff check` / `uv run black --check` でクリーンか（`src/` で実行）
+- `uv run ruff check .` / `uv run ruff format --check .` がクリーンか（`src/` で実行）。#7 の導入後は `uv run mypy .` も通るか
 - 命名規則（PEP 8）、import の順序、例外処理（例外を握りつぶしていないか）、ログ出力（秘密情報・個人情報を出していないか）
 - 機能変更と無関係な一括整形が混ざっていないか（→ `.claude/rules/minimal-change.md`）
 

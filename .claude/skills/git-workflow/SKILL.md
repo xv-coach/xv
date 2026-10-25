@@ -220,7 +220,7 @@ Closes #<Issue 番号>（関連のみなら Refs #<番号>。無ければ「な�
 
 ## 検証
 - `uv run python manage.py test`: <結果>
-- `uv run ruff check <変更したファイル>`: <結果>
+- `uv run ruff check .` / `uv run ruff format --check .`: <結果>
 - 未実施: <理由と未確認の範囲>
 
 ## 影響・互換性

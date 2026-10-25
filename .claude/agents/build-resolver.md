@@ -17,7 +17,7 @@ memory: project
 
 ### ステップ 1: エラーの再現
 
-AGENTS.md の「ビルド・実行コマンド」から該当するコマンドを実行し、出力をキャプチャする（Python 側は `src/` で `uv sync --locked` → `uv run python manage.py check` → `makemigrations --check --dry-run` → `test` → `uv run ruff check`）。CI の失敗は `gh run view <run-id> --log-failed` でログを取る。
+AGENTS.md の「ビルド・実行コマンド」から該当するコマンドを実行し、出力をキャプチャする（Python 側は `src/` で `uv sync --locked` → `uv run python manage.py check` → `makemigrations --check --dry-run` → `test` → `uv run ruff check .` → `uv run ruff format --check .`。#7 の導入後は `uv run pytest` / `uv run mypy .` も）。CI の失敗は `gh run view <run-id> --log-failed` でログを取る。
 
 旧構成（Python 3.7 / Django 2.2 / MySQL 5.7 / Poetry / CircleCI）の環境を起動・導入して再現しない（📋 `xv-coach/xv#3`）。`.env` は読まない。必要な値は `.env.example` / `.env.testing` を見る。
 
@@ -34,7 +34,7 @@ AGENTS.md の「ビルド・実行コマンド」から該当するコマンド�
 | **依存関係エラー** | `uv sync --locked` の失敗（lock と `pyproject.toml` の不一致）、バージョン競合、Python バージョン不一致 |
 | **フレームワーク API** | Django のアップグレードで削除・変更された API、非推奨警告 |
 | **マイグレーション・DB** | `makemigrations --check` の差分、マイグレーション競合、PostgreSQL 接続失敗 |
-| **テスト・lint** | テスト失敗、ruff / black の指摘 |
+| **テスト・lint・型** | テスト失敗（`manage.py test` / pytest）、`ruff check` / `ruff format --check` の指摘、mypy のエラー |
 | **コンテナ** | `docker compose build` の失敗、build context・`.dockerignore` の問題 |
 
 ### ステップ 3: 根本原因の特定

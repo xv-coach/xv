@@ -12,8 +12,11 @@ xv は、複数のラグビークラブが選手・ニュース・試合結果�
 
 - 現状: `src/` 以下に 2019 年頃のレガシー Django 実装がある。登録ルートは `admin/` のみで、公開 API / 公開サイトは未実装
   - Django アプリ: `common`（タイムスタンプ・論理削除の基底）、`master`（ポジション・得点方式・反則などの語彙）、`member`（チーム・選手）、`match`（試合・登録選手・得点 / 反則 / 交替イベント）
-  - 設定パッケージ: `src/xv_rugby/`（`settings.py` / `urls.py` / `wsgi.py` / `django.ini`）
-- 実行環境: Python 3.14 / Django 6.1 / PostgreSQL 18 / uv / GitHub Actions（🔀 [xv-coach/xv#5](https://github.com/xv-coach/xv/pull/5) で Python 3.7 / Django 2.2 / MySQL 5.7 / Poetry / CircleCI から移行）
+  - 設定パッケージ: `src/xv_rugby/`（`settings.py` / `urls.py` / `wsgi.py`）
+- 実行環境（🔀 [xv-coach/xv#5](https://github.com/xv-coach/xv/pull/5) と 🔀 [xv-coach/xv#7](https://github.com/xv-coach/xv/pull/7) のマージ後）: Python 3.14 / Django 6.1 / PostgreSQL 18 / uv / gunicorn / WhiteNoise / GitHub Actions
+  - #5 で Python 3.7 / Django 2.2 / MySQL 5.7 / Poetry / CircleCI から移行し、lint と format を ruff に統一
+  - #7 で uWSGI を gunicorn に、nginx を WhiteNoise（静的ファイル配信）に置き換え。pytest + pytest-django、mypy + django-stubs、pre-commit も #7 で導入予定
+- 依存の方針: 使われていない・更新が止まっているツールやライブラリは、積極的に後継へ移行する
 - 秘密情報: `SECRET_KEY`・DB 認証情報などは環境変数（`.env`）から読む。`.env` はコミットしない。`.env.example` はプレースホルダ、`.env.testing` は CI 用ダミー値のみ
 - 旧 `settings.py` にハードコードされていた `SECRET_KEY` は git 履歴に残っており漏洩済み。どの環境でも再利用しない。旧設定の値を Issue・ログ・fixture・PR に転載しない
 
@@ -31,7 +34,7 @@ xv は、複数のラグビークラブが選手・ニュース・試合結果�
 
 ## ビルド・実行コマンド
 
-🔀 [xv-coach/xv#5](https://github.com/xv-coach/xv/pull/5) のマージ後の構成を前提とする。`pyproject.toml` / `uv.lock` / `.python-version` は `src/` にある。
+🔀 [xv-coach/xv#5](https://github.com/xv-coach/xv/pull/5) と 🔀 [xv-coach/xv#7](https://github.com/xv-coach/xv/pull/7) のマージ後の構成を前提とする。pytest / mypy / pre-commit の行は #7 で導入された後に使える。`pyproject.toml` / `uv.lock` / `.python-version` は `src/` にある。
 
 ```bash
 # 初回: 環境変数ファイルを用意し、DJANGO_SECRET_KEY と POSTGRES_PASSWORD を新しく生成した値にする
@@ -46,19 +49,22 @@ uv run python manage.py check
 uv run python manage.py makemigrations --check --dry-run
 uv run python manage.py migrate
 uv run python manage.py test
+uv run pytest            # #7 で pytest + pytest-django を導入後
 
-# lint / format（新規・変更ファイルは ruff クリーンにする）
-uv run ruff check <変更したファイル>
-uv run black --check <変更したファイル>
+# lint / format / 型チェック
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy .            # #7 で mypy + django-stubs を導入後
+uv run pre-commit run --all-files   # #7 で pre-commit を導入後
 
-# Docker で起動（PostgreSQL 18 + Django(uWSGI) + nginx。http://localhost:8000）
+# Docker で起動（PostgreSQL 18 + Django(gunicorn) + WhiteNoise。http://localhost:8000）
 docker compose up -d --build
 ```
 
 - 依存の追加・更新は `uv add` / `uv lock` で行い、`uv.lock` を手で編集しない
 - Docker を使わずに Django を動かす場合は、ローカルの PostgreSQL を `.env` の `DB_HOST` / `DB_PORT` に合わせる
-- 既存コードには ruff / black の指摘が残っている。一括整形は別 PR にし、機能変更と混ぜない
-- CI は GitHub Actions（`.github/workflows/ci.yml`）で、`master` への push と pull request に対して `uv sync --locked` → `check` → `makemigrations --check` → `migrate` → `test` → ruff を実行する
+- 整形・lint は ruff（`ruff check` + `ruff format`）に統一している。既存コードは #5 で `ruff format` 済み。設定の変更による一括整形は別 PR にし、機能変更と混ぜない
+- CI は GitHub Actions（`.github/workflows/ci.yml`）で、`master` への push と pull request に対して `uv sync --locked` → `check` → `makemigrations --check` → `migrate` → `test` → `ruff check` / `ruff format --check` を実行する（action は SHA で固定）
 
 ## Pull Request
 

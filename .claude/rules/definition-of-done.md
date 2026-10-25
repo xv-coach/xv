@@ -16,7 +16,7 @@
 - 最小変更原則を守る（→ `minimal-change.md`）
 
 ## Phase 3: コミット前（各コミット前）
-- `src/` で `uv run python manage.py check`、`makemigrations --check --dry-run`、`test` が通る。新規・変更ファイルは `uv run ruff check` がクリーン（コマンドは `AGENTS.md`）
+- `src/` で `uv run python manage.py check`、`makemigrations --check --dry-run`、`test` が通る。`uv run ruff check .` と `uv run ruff format --check .` がクリーン（#7 の導入後は `uv run mypy .` も）（コマンドは `AGENTS.md`）
 - 秘密情報（`.env`、鍵、実在の認証情報）や実在個人のデータを含めない
 - コミットの粒度は `git-conventions.md`
 
