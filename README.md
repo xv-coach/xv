@@ -14,7 +14,9 @@
 | パッケージ管理 | [uv](https://docs.astral.sh/uv/) |
 | アプリケーションサーバー | gunicorn 26 |
 | 静的ファイル配信 | WhiteNoise 6 |
-| Lint / Format | ruff |
+| Lint / Format | ruff（pre-commit） |
+| 型チェック | mypy + django-stubs |
+| テスト | pytest + pytest-django + model-bakery |
 | CI | GitHub Actions |
 
 ## ディレクトリ構成
@@ -28,10 +30,12 @@
 │   ├── common/               # 共通の抽象モデル（BaseModel: 論理削除・作成/更新日時）
 │   ├── master/               # マスタ（ポジション、役職、得点方法、反則など）
 │   ├── member/               # チーム・メンバー
-│   └── match/                # 試合・イベント記録
+│   ├── match/                # 試合・イベント記録
+│   └── tests/                # pytest のテスト
 ├── containers/django/        # Django（gunicorn）の Dockerfile
 ├── docker-compose.yml
 ├── .env.example              # 環境変数のテンプレート
+├── .pre-commit-config.yaml   # pre-commit（ruff / uv lock）
 └── .github/workflows/ci.yml  # CI
 ```
 
@@ -119,10 +123,24 @@ docker compose／gunicorn 用の変数（`DJANGO_HOST_PORT`、`DJANGO_SOURCE`、
 
 ```bash
 cd src
-uv run python manage.py test                 # PostgreSQL への接続が必要
+uv run pytest                                # PostgreSQL への接続が必要（テスト用 DB を作成する権限も必要）
 uv run python manage.py makemigrations --check --dry-run
 uv run ruff check .
 uv run ruff format --check .                 # 整形するときは uv run ruff format .
+uv run mypy .
+```
+
+pytest は `--reuse-db` 付きで動きます。マイグレーションを変更したあとは `uv run pytest --create-db` でテスト DB を作り直してください。
+
+### pre-commit
+
+コミット時に `ruff check --fix`・`ruff format`・`uv lock` を自動で実行します（設定は `.pre-commit-config.yaml`、フックは commit SHA で固定）。
+
+```bash
+# リポジトリ直下で一度だけ
+uv run --project src pre-commit install
+# 全ファイルに対して実行
+uv run --project src pre-commit run --all-files
 ```
 
 ## CI
@@ -131,7 +149,9 @@ GitHub Actions（`.github/workflows/ci.yml`）で、`master` への push と Pul
 
 - PostgreSQL 18 のサービスコンテナを起動
 - `uv sync --locked`
-- `manage.py check` / `makemigrations --check --dry-run` / `migrate` / `test`
+- `manage.py check` / `makemigrations --check --dry-run` / `migrate`
+- `pytest`
+- `mypy`
 - `ruff check` / `ruff format --check`
 
 Action は commit SHA で固定しており、更新は Dependabot（`.github/dependabot.yml`）に任せています。
