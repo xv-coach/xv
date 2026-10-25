@@ -29,10 +29,10 @@
 
 ### リポジトリの分担（オーナーの方針）
 
-- 将来、**フロントエンド（公開サイトと、管理画面以外の独自 UI。ReScript を優先）は別リポジトリ**に置く。`xv-coach/xv` は**バックエンド専用**（管理画面・コンテンツ管理・API）とする
-- そのため、この文書群の契約（[`player-profile-contract.md`](player-profile-contract.md)）と公開 DTO の許可リストは、**リポジトリをまたぐ境界**になる。契約のバージョニング、フロントエンド側リポジトリでの取り込み・デコード・検証の方法は [ADR 0001](../adr/0001-backend-and-api-evaluation.md) の比較項目に含めた
+- 将来、**エンドユーザー向けの公開サイト（ReScript を優先）だけを別リポジトリ**に置く。管理画面は本リポジトリに残し、`xv-coach/xv` は**バックエンド**（管理画面・コンテンツ管理・API）を担う
+- そのため、この文書群の契約（[`player-profile-contract.md`](player-profile-contract.md)）と公開 DTO の許可リストは、**リポジトリをまたぐ境界**になる。契約のバージョニング、公開サイト側リポジトリでの取り込み・デコード・検証の方法は [ADR 0001](../adr/0001-backend-and-api-evaluation.md) の比較項目に含めた
 - fixture の `schema_version` は、両リポジトリが同じ fixture を契約テストに使う場合の版の目印として置いている（取り込み方法は未決）
-- 管理画面は、Django 標準 admin を自前でデザイン改善して使う案がオーナーの作業仮説として挙がっている（→ ADR 0001。採用は未決）
+- 管理画面は、Django を選んだ場合、Django 標準 admin を自前のテンプレート・CSS でデザイン改善して使い、jQuery は使わない。通常のフォームで扱えない画面は ReScript を使うプラグイン（1 プラグイン = 1 Django アプリ）として追加する。Django admin 全体を ReScript で書き直すことは計画しない（→ [ADR 0001](../adr/0001-backend-and-api-evaluation.md) の「管理 UI の方針」。バックエンド言語の採用は未決）
 
 ## 旧モデルから新概念への対応
 
