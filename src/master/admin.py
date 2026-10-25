@@ -1,17 +1,17 @@
 from django.contrib import admin
 
+from common.admin import BaseAdmin
+
 from .models import (
-    PlayerPosition,
-    StaffPosition,
     FieldStaff,
+    FoulMethod,
+    MatchSwitchEventType,
     MatchType,
     PatternType,
-    MatchSwitchEventType,
+    PlayerPosition,
     ScoringMethod,
-    FoulMethod,
+    StaffPosition,
 )
-
-from common.admin import BaseAdmin
 
 
 class PlayerPositionAdmin(BaseAdmin):

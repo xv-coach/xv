@@ -1,25 +1,43 @@
-FROM python:3.7
+FROM python:3.14-slim
 
-ARG PROJECT_ENV
+COPY --from=ghcr.io/astral-sh/uv:0.13.5 /uv /uvx /bin/
 
+ARG PROJECT_ENV=development
+
+# The venv lives outside /code because docker-compose bind-mounts ./src
+# over /code in development.
 ENV PROJECT_ENV=${PROJECT_ENV} \
   PYTHONFAULTHANDLER=1 \
   PYTHONUNBUFFERED=1 \
   PYTHONHASHSEED=random \
-  PIP_NO_CACHE_DIR=off \
-  PIP_DISABLE_PIP_VERSION_CHECK=on \
-  PIP_DEFAULT_TIMEOUT=100 \
-  POETRY_VERSION=0.12.11
+  UV_PROJECT_ENVIRONMENT=/opt/venv \
+  UV_PYTHON_DOWNLOADS=never \
+  UV_COMPILE_BYTECODE=1 \
+  UV_LINK_MODE=copy \
+  DJANGO_STATIC_ROOT=/static \
+  PATH="/opt/venv/bin:$PATH"
 
-RUN pip install "poetry==$POETRY_VERSION"
-
-RUN mkdir /code
 WORKDIR /code
-COPY src/pyproject.toml /code/pyproject.toml
-COPY src/poetry.lock /code/poetry.lock
 
-# Project initialization:
-RUN poetry config settings.virtualenvs.create false \
-  && poetry install $(test "$PROJECT_ENV" == production && echo "--no-dev") --no-interaction --no-ansi
+# Install dependencies first for better layer caching.
+RUN --mount=type=cache,target=/root/.cache/uv \
+  --mount=type=bind,source=src/uv.lock,target=uv.lock \
+  --mount=type=bind,source=src/pyproject.toml,target=pyproject.toml \
+  if [ "$PROJECT_ENV" = "production" ]; then \
+    uv sync --locked --no-install-project --no-dev; \
+  else \
+    uv sync --locked --no-install-project; \
+  fi
 
-COPY . /code/
+COPY src/ /code/
+
+RUN useradd --create-home --uid 1000 app \
+  && mkdir -p /static \
+  && chown app:app /static
+USER app
+
+EXPOSE 8000
+
+# Extra gunicorn options (e.g. --reload, --workers 4) can be passed via
+# the GUNICORN_CMD_ARGS environment variable.
+CMD ["sh", "-c", "python manage.py collectstatic --noinput && exec gunicorn xv_rugby.wsgi:application --bind 0.0.0.0:8000 --access-logfile -"]
