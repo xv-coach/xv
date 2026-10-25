@@ -6,19 +6,20 @@ authors = [{ name = "Nagatatz", email = "nagata.hbdc@gmail.com" }]
 license = "MIT"
 requires-python = ">=3.14,<3.15"
 dependencies = [
-    "django (>=6.1.2,<6.2)",
-    "psycopg[binary] (>=3.3.6,<4)",
-    "uwsgi (>=2.0.31,<2.1)",
+    "django>=6.1.2,<6.2",
+    "psycopg[binary]>=3.3.6,<4",
+    "uwsgi>=2.0.31,<2.1",
 ]
 
 [dependency-groups]
 dev = [
-    "black (>=26.10.1)",
-    "ruff (>=0.17.2)",
+    "black>=26.10.1",
+    "ruff>=0.17.2",
 ]
 
-[tool.poetry]
-package-mode = false
+[tool.uv]
+# Django project, not a distributable package.
+package = false
 
 [tool.black]
 target-version = ["py314"]
@@ -27,7 +28,3 @@ skip-string-normalization = true
 [tool.ruff]
 target-version = "py314"
 extend-exclude = ["*/migrations/*"]
-
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
