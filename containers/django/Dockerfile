@@ -14,12 +14,8 @@ ENV PROJECT_ENV=${PROJECT_ENV} \
   UV_PYTHON_DOWNLOADS=never \
   UV_COMPILE_BYTECODE=1 \
   UV_LINK_MODE=copy \
+  DJANGO_STATIC_ROOT=/static \
   PATH="/opt/venv/bin:$PATH"
-
-# build-essential is needed to compile uWSGI (no wheels are published).
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends build-essential \
-  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /code
 
@@ -34,3 +30,14 @@ RUN --mount=type=cache,target=/root/.cache/uv \
   fi
 
 COPY src/ /code/
+
+RUN useradd --create-home --uid 1000 app \
+  && mkdir -p /static \
+  && chown app:app /static
+USER app
+
+EXPOSE 8000
+
+# Extra gunicorn options (e.g. --reload, --workers 4) can be passed via
+# the GUNICORN_CMD_ARGS environment variable.
+CMD ["sh", "-c", "python manage.py collectstatic --noinput && exec gunicorn xv_rugby.wsgi:application --bind 0.0.0.0:8000 --access-logfile -"]

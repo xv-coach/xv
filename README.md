@@ -12,8 +12,8 @@
 | Django | 6.1 |
 | PostgreSQL | 18（Docker / CI） |
 | パッケージ管理 | [uv](https://docs.astral.sh/uv/) |
-| アプリケーションサーバー | uWSGI 2.0 |
-| Web サーバー | nginx 1.30（alpine） |
+| アプリケーションサーバー | gunicorn 26 |
+| 静的ファイル配信 | WhiteNoise 6 |
 | Lint / Format | ruff |
 | CI | GitHub Actions |
 
@@ -24,12 +24,12 @@
 ├── src/                      # Django プロジェクト（uv のプロジェクトルート）
 │   ├── manage.py
 │   ├── pyproject.toml / uv.lock
-│   ├── xv_rugby/             # 設定パッケージ（settings.py, urls.py, wsgi.py, django.ini）
+│   ├── xv_rugby/             # 設定パッケージ（settings.py, urls.py, wsgi.py）
 │   ├── common/               # 共通の抽象モデル（BaseModel: 論理削除・作成/更新日時）
 │   ├── master/               # マスタ（ポジション、役職、得点方法、反則など）
 │   ├── member/               # チーム・メンバー
 │   └── match/                # 試合・イベント記録
-├── containers/               # Dockerfile（django / nginx）と nginx 設定
+├── containers/django/        # Django（gunicorn）の Dockerfile
 ├── docker-compose.yml
 ├── .env.example              # 環境変数のテンプレート
 └── .github/workflows/ci.yml  # CI
@@ -39,7 +39,7 @@
 
 ### ローカル（uv）
 
-前提: [uv](https://docs.astral.sh/uv/getting-started/installation/) と PostgreSQL が使えること。uWSGI をビルドするため C コンパイラも必要です（`uv sync` 時）。
+前提: [uv](https://docs.astral.sh/uv/getting-started/installation/) と PostgreSQL が使えること。
 
 ```bash
 cd src
@@ -51,7 +51,6 @@ export POSTGRES_DB=xv_rugby
 export POSTGRES_USER=xv_rugby
 export POSTGRES_PASSWORD=<ローカルDBのパスワード>
 export DB_HOST=localhost
-export DJANGO_STATIC_ROOT=../static
 
 uv run python manage.py migrate
 uv run python manage.py createsuperuser
@@ -59,6 +58,16 @@ uv run python manage.py runserver
 ```
 
 http://127.0.0.1:8000/admin/ で管理画面にログインできます。
+
+本番相当（gunicorn + WhiteNoise）で動かす場合:
+
+```bash
+export DJANGO_DEBUG=0 DJANGO_SECRET_KEY=<生成したキー> DJANGO_ALLOWED_HOSTS=localhost
+uv run python manage.py collectstatic --noinput   # リポジトリ直下の static/ に出力
+uv run gunicorn xv_rugby.wsgi:application --bind 127.0.0.1:8000
+```
+
+HTTP で確認するときは `DJANGO_SECURE_COOKIES=0` も設定してください（DEBUG オフ時は Cookie が Secure になるため、HTTP ではログインできません）。
 
 `DJANGO_DEBUG=1` かつ `DJANGO_SECRET_KEY` 未設定の場合は、起動ごとに使い捨てのキーが生成されます（再起動するとログインセッションは切れます）。
 
@@ -79,7 +88,9 @@ docker compose exec django python manage.py migrate
 docker compose exec django python manage.py createsuperuser
 ```
 
-nginx 経由で http://localhost:8000/admin/ にアクセスします（ポートは `NGINX_HOST_HTTP_PORT`）。PostgreSQL のポートはデフォルトではホストに公開していません。
+django コンテナは起動時に `collectstatic` を実行してから gunicorn を起動します。http://localhost:8000/admin/ にアクセスします（ポートは `DJANGO_HOST_PORT`）。静的ファイルは WhiteNoise が配信します。`.env.example` では `GUNICORN_CMD_ARGS=--reload` によりコード変更時に自動で再起動します。PostgreSQL のポートはデフォルトではホストに公開していません。
+
+本番では TLS を終端するリバースプロキシ／ロードバランサーを gunicorn の前段に置く想定です。
 
 ## 環境変数
 
@@ -91,7 +102,7 @@ Django が読む環境変数（`src/xv_rugby/settings.py`）:
 | `DJANGO_DEBUG` | - | `1` / `true` / `yes` / `on` で DEBUG 有効 | オフ |
 | `DJANGO_ALLOWED_HOSTS` | 本番では必須 | カンマ区切りのホスト名 | DEBUG 時 `localhost,127.0.0.1`、それ以外は空 |
 | `DJANGO_CSRF_TRUSTED_ORIGINS` | - | カンマ区切りのオリジン（`https://example.com` など） | 空 |
-| `DJANGO_STATIC_ROOT` | - | `collectstatic` の出力先 | `/static` |
+| `DJANGO_STATIC_ROOT` | - | `collectstatic` の出力先 | リポジトリ直下の `static/`（Docker では `/static`） |
 | `DJANGO_SECURE_COOKIES` | - | DEBUG オフ時に Cookie を Secure にするか | `1` |
 | `DJANGO_SECURE_SSL_REDIRECT` | - | DEBUG オフ時に HTTPS へリダイレクトするか | `0` |
 | `DJANGO_SECURE_HSTS_SECONDS` | - | DEBUG オフ時の HSTS 秒数 | `0` |
@@ -102,7 +113,7 @@ Django が読む環境変数（`src/xv_rugby/settings.py`）:
 | `DB_PORT` | - | DB ポート | `5432` |
 | `DB_CONN_MAX_AGE` | - | DB 接続の再利用秒数 | `60` |
 
-docker compose 用の変数（`NGINX_HOST_HTTP_PORT`、`NGINX_CONF_PATH`、`DJANGO_SOURCE`、`STATIC_FILES` など）は `.env.example` を参照してください。
+docker compose／gunicorn 用の変数（`DJANGO_HOST_PORT`、`DJANGO_SOURCE`、`GUNICORN_CMD_ARGS` など）は `.env.example` を参照してください。`GUNICORN_CMD_ARGS` は gunicorn 標準の環境変数で、`--workers 4` などのオプションを渡せます。
 
 ## テスト・Lint
 
