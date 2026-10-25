@@ -1,0 +1,4 @@
+# Hook scripts run under bash/sh (Git Bash on Windows), which fails on CRLF line endings
+# ($'\r': command not found). Keep them LF even when a teammate clones with
+# core.autocrlf=true. Applies only under .claude/.
+*.sh text eol=lf
