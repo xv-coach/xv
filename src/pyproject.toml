@@ -13,7 +13,6 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "black>=26.10.1",
     "ruff>=0.17.2",
 ]
 
@@ -21,10 +20,16 @@ dev = [
 # Django project, not a distributable package.
 package = false
 
-[tool.black]
-target-version = ["py314"]
-skip-string-normalization = true
-
 [tool.ruff]
 target-version = "py314"
+line-length = 88
 extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "DJ"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["common", "master", "member", "match", "xv_rugby"]
+
+[tool.ruff.format]
+quote-style = "single"

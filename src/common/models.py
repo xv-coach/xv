@@ -4,10 +4,10 @@ from django.utils import timezone
 
 class BaseQuerySet(models.query.QuerySet):
     def delete(self):
-        return super(BaseQuerySet, self).update(deleted_at=timezone.now())
+        return super().update(deleted_at=timezone.now())
 
     def hard_delete(self):
-        return super(BaseQuerySet, self).delete()
+        return super().delete()
 
     def alive(self):
         return self.filter(deleted_at=None)
@@ -19,7 +19,7 @@ class BaseQuerySet(models.query.QuerySet):
 class BaseManager(models.Manager):
     def __init__(self, *args, **kwargs):
         self.alive_only = kwargs.pop('alive_only', True)
-        super(BaseManager, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def get_queryset(self):
         if self.alive_only:

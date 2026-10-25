@@ -1,24 +1,21 @@
+from enum import Enum
+
 from django.db import models
 from django.utils import timezone
 
-from enum import Enum
-
-from common.models import BaseModel, BaseManager
+from common.models import BaseManager, BaseModel
 from master.models import (
-    PlayerPosition,
-    StaffPosition,
     FieldStaff,
+    FoulMethod,
+    MatchSwitchEventType,
     MatchType,
     PatternType,
-    MatchSwitchEventType,
     ScoringMethod,
-    FoulMethod,
 )
-from member.models import TeamGroup, Member
+from member.models import Member, TeamGroup
 
 
 class HeldManager(BaseManager):
-
     use_for_related_fields = True
 
     def held(self, **kwargs):
@@ -49,7 +46,10 @@ class Match(BaseModel):
         related_name='match_assistant_referee',
     )
     touch_judge = models.ManyToManyField(
-        Member, blank=True, verbose_name='タッチジャッジ', related_name='match_touch_judge'
+        Member,
+        blank=True,
+        verbose_name='タッチジャッジ',
+        related_name='match_touch_judge',
     )
 
     objects = HeldManager()
@@ -98,7 +98,9 @@ class StaffOnMatch(BaseModel):
     field_staff = models.ForeignKey(
         FieldStaff, on_delete=models.PROTECT, verbose_name='フィールドスタッフ職'
     )
-    member = models.ForeignKey(Member, on_delete=models.PROTECT, verbose_name='メンバー')
+    member = models.ForeignKey(
+        Member, on_delete=models.PROTECT, verbose_name='メンバー'
+    )
 
     class Meta:
         verbose_name_plural = '試合参加スタッフ'
@@ -115,7 +117,9 @@ class PlayerOnMatch(BaseModel):
         TeamOnMatch, on_delete=models.CASCADE, verbose_name='所属チーム'
     )
     position_number = models.PositiveIntegerField(verbose_name='背番号')
-    member = models.ForeignKey(Member, on_delete=models.PROTECT, verbose_name='メンバー')
+    member = models.ForeignKey(
+        Member, on_delete=models.PROTECT, verbose_name='メンバー'
+    )
 
     class Meta:
         verbose_name_plural = '試合登録プレイヤー'
@@ -171,7 +175,9 @@ class MatchSwitchEvent(MatchEvent):
     """
 
     event_type = models.ForeignKey(
-        MatchSwitchEventType, on_delete=models.PROTECT, verbose_name='試合中交替/入替イベント種別'
+        MatchSwitchEventType,
+        on_delete=models.PROTECT,
+        verbose_name='試合中交替/入替イベント種別',
     )
     out_member = models.ForeignKey(
         PlayerOnMatch,

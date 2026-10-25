@@ -51,7 +51,8 @@ if not SECRET_KEY:
         SECRET_KEY = get_random_secret_key()
     else:
         raise ImproperlyConfigured(
-            'DJANGO_SECRET_KEY environment variable is required when DJANGO_DEBUG is off.'
+            'DJANGO_SECRET_KEY environment variable is required '
+            'when DJANGO_DEBUG is off.'
         )
 
 ALLOWED_HOSTS = env_list('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1' if DEBUG else '')
@@ -129,7 +130,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'
+        ),
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
