@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from typing import Any
 
 from django.db import models
@@ -63,6 +64,14 @@ class BaseModel(models.Model):
     @property
     def is_deleted(self) -> bool:
         return self.deleted_at is not None
+
+    def validate_constraints(self, exclude: Collection[str] | None = None) -> None:
+        # Conditional constraints filter on deleted_at (live rows only). Admin
+        # forms exclude deleted_at, which would make Django skip validating
+        # those constraints, so always keep it in the validation.
+        if exclude:
+            exclude = set(exclude) - {'deleted_at'}
+        super().validate_constraints(exclude=exclude)
 
     def delete(
         self, using: Any = None, keep_parents: bool = False

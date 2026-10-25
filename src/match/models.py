@@ -2,6 +2,7 @@ from typing import Any, ClassVar
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -15,6 +16,10 @@ from master.models import (
     ScoringMethod,
 )
 from member.models import Member, TeamGroup
+
+# Unique constraints apply to live rows only, so a soft-deleted combination
+# can be registered again (PostgreSQL partial unique indexes).
+ALIVE = Q(deleted_at__isnull=True)
 
 SAME_MATCH_ERROR = _('ハーフと同じ試合のものを選択してください。')
 
@@ -92,6 +97,7 @@ class TeamOnMatch(BaseModel):
         constraints = [
             models.UniqueConstraint(
                 fields=['match', 'display_first'],
+                condition=ALIVE,
                 name='uniq_team_on_match_match_display_first',
             ),
         ]
@@ -122,6 +128,7 @@ class StaffOnMatch(BaseModel):
         constraints = [
             models.UniqueConstraint(
                 fields=['team', 'member'],
+                condition=ALIVE,
                 name='uniq_staff_on_match_team_member',
             ),
         ]
@@ -150,10 +157,12 @@ class PlayerOnMatch(BaseModel):
         constraints = [
             models.UniqueConstraint(
                 fields=['team', 'position_number'],
+                condition=ALIVE,
                 name='uniq_player_on_match_team_position_number',
             ),
             models.UniqueConstraint(
                 fields=['team', 'member'],
+                condition=ALIVE,
                 name='uniq_player_on_match_team_member',
             ),
         ]
@@ -179,6 +188,7 @@ class Half(BaseModel):
         constraints = [
             models.UniqueConstraint(
                 fields=['match', 'number'],
+                condition=ALIVE,
                 name='uniq_half_match_number',
             ),
         ]
