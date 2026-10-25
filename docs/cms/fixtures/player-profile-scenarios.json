@@ -1,0 +1,307 @@
+{
+  "schema_version": "0.1.0",
+  "synthetic": true,
+  "description": "選手紹介の編集・公開スライス（P0）の架空 fixture。実在の人物・クラブ・サイトのデータは含まない。形とフィールドの意味は docs/cms/player-profile-contract.md、使い方は docs/cms/player-profile-acceptance.md を参照。実行済みテストの入力ではなく、仕様の具体例。",
+  "notes": [
+    "ID は fixture 内の参照用ラベルであり、実装の ID 形式（UUID / 連番など）を決めるものではない",
+    "日時は Asia/Tokyo（+09:00）の固定値。実装では時計を差し替えて比較する想定",
+    "メールアドレスは予約ドメイン example.invalid の架空値。非公開フィールドが公開出力に出ないことの確認用",
+    "cache.key_components は識別に含める要素の列挙であり、キー文字列の形式は決めない"
+  ],
+  "vocabulary": {
+    "positions": [
+      { "id": "pos-flanker", "label": "フランカー" },
+      { "id": "pos-lock", "label": "ロック" }
+    ]
+  },
+  "clubs": [
+    { "id": "club-a", "name": "架空クラブA" },
+    { "id": "club-b", "name": "架空クラブB" }
+  ],
+  "teams": [
+    { "id": "team-a1", "club_id": "club-a", "name": "架空クラブA トップチーム" },
+    { "id": "team-b1", "club_id": "club-b", "name": "架空クラブB トップチーム" }
+  ],
+  "seasons": [
+    { "id": "season-a-2026", "club_id": "club-a", "label": "2026", "starts_on": "2026-04-01", "ends_on": "2027-03-31" },
+    { "id": "season-b-2026", "club_id": "club-b", "label": "2026", "starts_on": "2026-04-01", "ends_on": "2027-03-31" }
+  ],
+  "players": [
+    {
+      "id": "player-a1",
+      "club_id": "club-a",
+      "public_id": "pub-a-001",
+      "is_adult": true,
+      "private": {
+        "birthday": "1998-05-05",
+        "contact_email": "player-a1@example.invalid",
+        "internal_note": "架空の内部メモ。公開出力に出さない。",
+        "consent_evidence_ref": "consent-ref-a1"
+      }
+    },
+    {
+      "id": "player-b1",
+      "club_id": "club-b",
+      "public_id": "pub-b-001",
+      "is_adult": true,
+      "private": {
+        "birthday": "1997-11-11",
+        "contact_email": "player-b1@example.invalid",
+        "internal_note": "架空の内部メモ。公開出力に出さない。",
+        "consent_evidence_ref": "consent-ref-b1"
+      }
+    }
+  ],
+  "roster_memberships": [
+    { "id": "rm-a1", "club_id": "club-a", "player_id": "player-a1", "team_id": "team-a1", "season_id": "season-a-2026", "starts_on": "2026-04-01", "ends_on": null },
+    { "id": "rm-b1", "club_id": "club-b", "player_id": "player-b1", "team_id": "team-b1", "season_id": "season-b-2026", "starts_on": "2026-04-01", "ends_on": null }
+  ],
+  "actors": [
+    { "id": "actor-a-editor", "authenticated": true, "club_id": "club-a", "roles": ["editor"] },
+    { "id": "actor-a-publisher", "authenticated": true, "club_id": "club-a", "roles": ["publisher"] },
+    { "id": "actor-b-editor", "authenticated": true, "club_id": "club-b", "roles": ["editor"] },
+    { "id": "actor-b-publisher", "authenticated": true, "club_id": "club-b", "roles": ["publisher"] },
+    { "id": "actor-anonymous", "authenticated": false, "club_id": null, "roles": [] }
+  ],
+  "nonexistent_ids": ["player-does-not-exist", "rm-does-not-exist", "pos-does-not-exist"],
+  "public_dto": {
+    "allowed_fields": ["public_id", "display_name", "team", "season", "positions", "bio", "revision_id"],
+    "forbidden_fields": ["id", "club_id", "birthday", "contact_email", "internal_note", "consent_evidence_ref", "roles", "actor_id", "height", "weight", "photo"]
+  },
+  "seed": {
+    "description": "主フロー開始前の状態。Club B には公開済みの選手が 1 名おり、Club A の公開読取に混ざらないことの確認に使う。Club A の選手にはまだ revision も公開もない。",
+    "revisions": [
+      {
+        "id": "rev-b1-r1",
+        "club_id": "club-b",
+        "player_id": "player-b1",
+        "number": 1,
+        "based_on_revision_id": null,
+        "created_by": "actor-b-editor",
+        "created_at": "2026-09-20T10:00:00+09:00",
+        "fields": { "display_name": "架空選手B1", "roster_membership_id": "rm-b1", "position_ids": ["pos-lock"], "bio": "架空クラブBのロック（架空の紹介文）。" }
+      }
+    ],
+    "publications": [
+      { "club_id": "club-b", "player_id": "player-b1", "status": "published", "current_revision_id": "rev-b1-r1", "published_at": "2026-09-20T12:00:00+09:00", "unpublished_at": null },
+      { "club_id": "club-a", "player_id": "player-a1", "status": "none", "current_revision_id": null, "published_at": null, "unpublished_at": null }
+    ]
+  },
+  "expected_outputs": [
+    {
+      "id": "exp-preview-a1-r1",
+      "kind": "preview",
+      "cache": { "scope": "private", "store": false },
+      "body": { "public_id": "pub-a-001", "display_name": "架空選手A1", "team": { "name": "架空クラブA トップチーム" }, "season": { "label": "2026" }, "positions": [{ "label": "フランカー" }], "bio": "架空クラブAのフランカー（架空の紹介文 r1）。", "revision_id": "rev-a1-r1" }
+    },
+    {
+      "id": "exp-preview-a1-r2",
+      "kind": "preview",
+      "cache": { "scope": "private", "store": false },
+      "body": { "public_id": "pub-a-001", "display_name": "架空選手A1", "team": { "name": "架空クラブA トップチーム" }, "season": { "label": "2026" }, "positions": [{ "label": "フランカー" }, { "label": "ロック" }], "bio": "架空クラブAのフランカー。ロックも務める（架空の紹介文 r2）。", "revision_id": "rev-a1-r2" }
+    },
+    {
+      "id": "exp-public-detail-a1-r1",
+      "kind": "public_detail",
+      "cache": { "scope": "public", "key_components": ["club-a", "pub-a-001", "rev-a1-r1"] },
+      "body": { "public_id": "pub-a-001", "display_name": "架空選手A1", "team": { "name": "架空クラブA トップチーム" }, "season": { "label": "2026" }, "positions": [{ "label": "フランカー" }], "bio": "架空クラブAのフランカー（架空の紹介文 r1）。", "revision_id": "rev-a1-r1" }
+    },
+    {
+      "id": "exp-public-detail-a1-r2",
+      "kind": "public_detail",
+      "cache": { "scope": "public", "key_components": ["club-a", "pub-a-001", "rev-a1-r2"] },
+      "body": { "public_id": "pub-a-001", "display_name": "架空選手A1", "team": { "name": "架空クラブA トップチーム" }, "season": { "label": "2026" }, "positions": [{ "label": "フランカー" }, { "label": "ロック" }], "bio": "架空クラブAのフランカー。ロックも務める（架空の紹介文 r2）。", "revision_id": "rev-a1-r2" }
+    },
+    {
+      "id": "exp-public-detail-not-found",
+      "kind": "error",
+      "error": "NOT_FOUND",
+      "note": "未公開・公開停止・存在しない公開 ID・他クラブの公開 ID はすべて同じ結果にし、区別できる情報を返さない"
+    },
+    {
+      "id": "exp-public-list-a-empty",
+      "kind": "public_list",
+      "cache": { "scope": "public", "key_components": ["club-a", "public-list"] },
+      "body": { "items": [] }
+    },
+    {
+      "id": "exp-public-list-a-r1",
+      "kind": "public_list",
+      "cache": { "scope": "public", "key_components": ["club-a", "public-list", "rev-a1-r1"] },
+      "body": { "items": [{ "public_id": "pub-a-001", "display_name": "架空選手A1", "team": { "name": "架空クラブA トップチーム" }, "season": { "label": "2026" }, "positions": [{ "label": "フランカー" }], "revision_id": "rev-a1-r1" }] }
+    },
+    {
+      "id": "exp-public-list-a-r2",
+      "kind": "public_list",
+      "cache": { "scope": "public", "key_components": ["club-a", "public-list", "rev-a1-r2"] },
+      "body": { "items": [{ "public_id": "pub-a-001", "display_name": "架空選手A1", "team": { "name": "架空クラブA トップチーム" }, "season": { "label": "2026" }, "positions": [{ "label": "フランカー" }, { "label": "ロック" }], "revision_id": "rev-a1-r2" }] }
+    },
+    {
+      "id": "exp-public-list-b-r1",
+      "kind": "public_list",
+      "cache": { "scope": "public", "key_components": ["club-b", "public-list", "rev-b1-r1"] },
+      "body": { "items": [{ "public_id": "pub-b-001", "display_name": "架空選手B1", "team": { "name": "架空クラブB トップチーム" }, "season": { "label": "2026" }, "positions": [{ "label": "ロック" }], "revision_id": "rev-b1-r1" }] }
+    }
+  ],
+  "steps": [
+    {
+      "id": "op-01-create-draft-a1-r1",
+      "after": "seed",
+      "actor": "actor-a-editor",
+      "operation": "draft.create",
+      "at": "2026-10-01T10:00:00+09:00",
+      "input": { "player_id": "player-a1", "fields": { "display_name": "架空選手A1", "roster_membership_id": "rm-a1", "position_ids": ["pos-flanker"], "bio": "架空クラブAのフランカー（架空の紹介文 r1）。" } },
+      "expected": {
+        "result": "ok",
+        "created_revision": { "id": "rev-a1-r1", "club_id": "club-a", "player_id": "player-a1", "number": 1, "based_on_revision_id": null, "created_by": "actor-a-editor", "created_at": "2026-10-01T10:00:00+09:00" },
+        "head_revision_id": "rev-a1-r1",
+        "publication": { "status": "none", "current_revision_id": null },
+        "audit": [{ "id": "audit-01", "actor_id": "actor-a-editor", "club_id": "club-a", "operation": "draft.create", "player_id": "player-a1", "revision_id": "rev-a1-r1", "at": "2026-10-01T10:00:00+09:00" }]
+      }
+    },
+    {
+      "id": "op-02-preview-a1-r1",
+      "after": "op-01-create-draft-a1-r1",
+      "actor": "actor-a-publisher",
+      "operation": "preview",
+      "at": "2026-10-01T10:10:00+09:00",
+      "input": { "revision_id": "rev-a1-r1" },
+      "expected": { "result": "ok", "output": "exp-preview-a1-r1" }
+    },
+    {
+      "id": "op-03-public-read-before-publish",
+      "after": "op-02-preview-a1-r1",
+      "actor": "actor-anonymous",
+      "operation": "public.list_and_detail",
+      "at": "2026-10-01T10:20:00+09:00",
+      "input": { "site_club_id": "club-a", "public_id": "pub-a-001" },
+      "expected": { "result": "ok", "list_output": "exp-public-list-a-empty", "detail_output": "exp-public-detail-not-found" }
+    },
+    {
+      "id": "op-04-publish-a1-r1",
+      "after": "op-03-public-read-before-publish",
+      "actor": "actor-a-publisher",
+      "operation": "publish",
+      "at": "2026-10-01T11:00:00+09:00",
+      "input": { "revision_id": "rev-a1-r1", "expected_current_revision_id": null },
+      "expected": {
+        "result": "ok",
+        "publication": { "status": "published", "current_revision_id": "rev-a1-r1", "published_at": "2026-10-01T11:00:00+09:00", "unpublished_at": null },
+        "invalidate": [["club-a", "pub-a-001"], ["club-a", "public-list"]],
+        "audit": [{ "id": "audit-02", "actor_id": "actor-a-publisher", "club_id": "club-a", "operation": "publish", "player_id": "player-a1", "revision_id": "rev-a1-r1", "previous_revision_id": null, "at": "2026-10-01T11:00:00+09:00" }]
+      }
+    },
+    {
+      "id": "op-05-public-read-r1",
+      "after": "op-04-publish-a1-r1",
+      "actor": "actor-anonymous",
+      "operation": "public.list_and_detail",
+      "at": "2026-10-01T11:10:00+09:00",
+      "input": { "site_club_id": "club-a", "public_id": "pub-a-001" },
+      "expected": { "result": "ok", "list_output": "exp-public-list-a-r1", "detail_output": "exp-public-detail-a1-r1" }
+    },
+    {
+      "id": "op-06-update-draft-a1-r2",
+      "after": "op-05-public-read-r1",
+      "actor": "actor-a-editor",
+      "operation": "draft.update",
+      "at": "2026-10-02T10:00:00+09:00",
+      "input": { "player_id": "player-a1", "expected_head_revision_id": "rev-a1-r1", "fields": { "display_name": "架空選手A1", "roster_membership_id": "rm-a1", "position_ids": ["pos-flanker", "pos-lock"], "bio": "架空クラブAのフランカー。ロックも務める（架空の紹介文 r2）。" } },
+      "expected": {
+        "result": "ok",
+        "created_revision": { "id": "rev-a1-r2", "club_id": "club-a", "player_id": "player-a1", "number": 2, "based_on_revision_id": "rev-a1-r1", "created_by": "actor-a-editor", "created_at": "2026-10-02T10:00:00+09:00" },
+        "head_revision_id": "rev-a1-r2",
+        "publication": { "status": "published", "current_revision_id": "rev-a1-r1" },
+        "unchanged_revisions": ["rev-a1-r1"],
+        "audit": [{ "id": "audit-03", "actor_id": "actor-a-editor", "club_id": "club-a", "operation": "draft.update", "player_id": "player-a1", "revision_id": "rev-a1-r2", "at": "2026-10-02T10:00:00+09:00" }]
+      }
+    },
+    {
+      "id": "op-07-public-read-during-r2",
+      "after": "op-06-update-draft-a1-r2",
+      "actor": "actor-anonymous",
+      "operation": "public.list_and_detail",
+      "at": "2026-10-02T10:10:00+09:00",
+      "input": { "site_club_id": "club-a", "public_id": "pub-a-001" },
+      "expected": { "result": "ok", "list_output": "exp-public-list-a-r1", "detail_output": "exp-public-detail-a1-r1" }
+    },
+    {
+      "id": "op-08-preview-a1-r2",
+      "after": "op-07-public-read-during-r2",
+      "actor": "actor-a-publisher",
+      "operation": "preview",
+      "at": "2026-10-02T10:20:00+09:00",
+      "input": { "revision_id": "rev-a1-r2" },
+      "expected": { "result": "ok", "output": "exp-preview-a1-r2" }
+    },
+    {
+      "id": "op-09-republish-a1-r2",
+      "after": "op-08-preview-a1-r2",
+      "actor": "actor-a-publisher",
+      "operation": "publish",
+      "at": "2026-10-02T11:00:00+09:00",
+      "input": { "revision_id": "rev-a1-r2", "expected_current_revision_id": "rev-a1-r1" },
+      "expected": {
+        "result": "ok",
+        "publication": { "status": "published", "current_revision_id": "rev-a1-r2", "published_at": "2026-10-02T11:00:00+09:00", "unpublished_at": null },
+        "invalidate": [["club-a", "pub-a-001"], ["club-a", "public-list"]],
+        "public_outputs_after": { "list_output": "exp-public-list-a-r2", "detail_output": "exp-public-detail-a1-r2" },
+        "audit": [{ "id": "audit-04", "actor_id": "actor-a-publisher", "club_id": "club-a", "operation": "publish", "player_id": "player-a1", "revision_id": "rev-a1-r2", "previous_revision_id": "rev-a1-r1", "at": "2026-10-02T11:00:00+09:00" }]
+      }
+    },
+    {
+      "id": "op-10-unpublish-a1",
+      "after": "op-09-republish-a1-r2",
+      "actor": "actor-a-publisher",
+      "operation": "unpublish",
+      "at": "2026-10-03T09:00:00+09:00",
+      "input": { "player_id": "player-a1", "expected_current_revision_id": "rev-a1-r2" },
+      "environment": { "cache_invalidation": "succeeds" },
+      "expected": {
+        "result": "ok",
+        "publication": { "status": "unpublished", "current_revision_id": null, "last_published_revision_id": "rev-a1-r2", "unpublished_at": "2026-10-03T09:00:00+09:00" },
+        "invalidate": [["club-a", "pub-a-001"], ["club-a", "public-list"]],
+        "invalidation": { "origin": "done", "delivered_caches": "confirmed" },
+        "public_outputs_after": { "list_output": "exp-public-list-a-empty", "detail_output": "exp-public-detail-not-found" },
+        "unchanged_revisions": ["rev-a1-r1", "rev-a1-r2"],
+        "audit": [{ "id": "audit-05", "actor_id": "actor-a-publisher", "club_id": "club-a", "operation": "unpublish", "player_id": "player-a1", "revision_id": "rev-a1-r2", "invalidation": "confirmed", "at": "2026-10-03T09:00:00+09:00" }]
+      }
+    },
+    {
+      "id": "op-11-unpublish-a1-invalidation-fails",
+      "after": "op-09-republish-a1-r2",
+      "actor": "actor-a-publisher",
+      "operation": "unpublish",
+      "at": "2026-10-03T09:00:00+09:00",
+      "input": { "player_id": "player-a1", "expected_current_revision_id": "rev-a1-r2" },
+      "environment": { "cache_invalidation": "fails" },
+      "expected": {
+        "result": "invalidation_pending",
+        "publication": { "status": "unpublish_pending", "current_revision_id": null, "last_published_revision_id": "rev-a1-r2", "unpublished_at": null },
+        "invalidate": [["club-a", "pub-a-001"], ["club-a", "public-list"]],
+        "invalidation": { "origin": "done", "delivered_caches": "failed", "retry_required": true },
+        "origin_public_outputs_after": { "list_output": "exp-public-list-a-empty", "detail_output": "exp-public-detail-not-found" },
+        "audit": [{ "id": "audit-06", "actor_id": "actor-a-publisher", "club_id": "club-a", "operation": "unpublish", "player_id": "player-a1", "revision_id": "rev-a1-r2", "invalidation": "failed", "at": "2026-10-03T09:00:00+09:00" }]
+      }
+    }
+  ],
+  "rejections": [
+    { "id": "rej-01-anonymous-draft-create", "after": "seed", "actor": "actor-anonymous", "operation": "draft.create", "input": { "player_id": "player-a1", "fields": { "display_name": "架空選手A1", "roster_membership_id": "rm-a1", "position_ids": ["pos-flanker"], "bio": "未認証の要求。" } }, "expected": { "error": "UNAUTHENTICATED", "no_state_change": true } },
+    { "id": "rej-02-anonymous-preview", "after": "op-01-create-draft-a1-r1", "actor": "actor-anonymous", "operation": "preview", "input": { "revision_id": "rev-a1-r1" }, "expected": { "error": "UNAUTHENTICATED", "no_state_change": true } },
+    { "id": "rej-03-b-editor-preview-a", "after": "op-01-create-draft-a1-r1", "actor": "actor-b-editor", "operation": "preview", "input": { "revision_id": "rev-a1-r1" }, "expected": { "error": "NOT_FOUND", "internal_reason": "CROSS_CLUB", "no_state_change": true } },
+    { "id": "rej-04-b-editor-update-a-draft", "after": "op-01-create-draft-a1-r1", "actor": "actor-b-editor", "operation": "draft.update", "input": { "club_id": "club-a", "player_id": "player-a1", "expected_head_revision_id": "rev-a1-r1", "fields": { "display_name": "書き換え要求", "roster_membership_id": "rm-a1", "position_ids": ["pos-flanker"], "bio": "他クラブからの書き換え要求。" } }, "expected": { "error": "NOT_FOUND", "internal_reason": "CROSS_CLUB", "ignored_input_fields": ["club_id"], "no_state_change": true } },
+    { "id": "rej-05-b-editor-publish-a", "after": "op-01-create-draft-a1-r1", "actor": "actor-b-editor", "operation": "publish", "input": { "revision_id": "rev-a1-r1", "expected_current_revision_id": null }, "expected": { "error": "FORBIDDEN", "no_state_change": true } },
+    { "id": "rej-06-b-publisher-publish-a", "after": "op-01-create-draft-a1-r1", "actor": "actor-b-publisher", "operation": "publish", "input": { "revision_id": "rev-a1-r1", "expected_current_revision_id": null }, "expected": { "error": "NOT_FOUND", "internal_reason": "CROSS_CLUB", "no_state_change": true } },
+    { "id": "rej-07-a-editor-publish", "after": "op-02-preview-a1-r1", "actor": "actor-a-editor", "operation": "publish", "input": { "revision_id": "rev-a1-r1", "expected_current_revision_id": null }, "expected": { "error": "FORBIDDEN", "no_state_change": true } },
+    { "id": "rej-08-a-editor-unpublish", "after": "op-05-public-read-r1", "actor": "actor-a-editor", "operation": "unpublish", "input": { "player_id": "player-a1", "expected_current_revision_id": "rev-a1-r1" }, "expected": { "error": "FORBIDDEN", "no_state_change": true } },
+    { "id": "rej-09-membership-other-club-team", "after": "seed", "actor": "actor-a-editor", "operation": "roster_membership.create", "input": { "player_id": "player-a1", "team_id": "team-b1", "season_id": "season-a-2026", "starts_on": "2026-04-01", "ends_on": null }, "expected": { "error": "INVALID_INPUT", "fields": { "team_id": "reference_not_found" }, "no_state_change": true } },
+    { "id": "rej-10-membership-reversed-period", "after": "seed", "actor": "actor-a-editor", "operation": "roster_membership.create", "input": { "player_id": "player-a1", "team_id": "team-a1", "season_id": "season-a-2026", "starts_on": "2026-09-01", "ends_on": "2026-04-01" }, "expected": { "error": "INVALID_INPUT", "fields": { "ends_on": "before_starts_on" }, "no_state_change": true } },
+    { "id": "rej-11-draft-nonexistent-refs", "after": "op-01-create-draft-a1-r1", "actor": "actor-a-editor", "operation": "draft.update", "input": { "player_id": "player-a1", "expected_head_revision_id": "rev-a1-r1", "fields": { "display_name": "架空選手A1", "roster_membership_id": "rm-does-not-exist", "position_ids": ["pos-does-not-exist"], "bio": "存在しない参照を含む入力。" } }, "expected": { "error": "INVALID_INPUT", "fields": { "roster_membership_id": "reference_not_found", "position_ids": "reference_not_found" }, "no_state_change": true } },
+    { "id": "rej-12-draft-nonexistent-player", "after": "seed", "actor": "actor-a-editor", "operation": "draft.create", "input": { "player_id": "player-does-not-exist", "fields": { "display_name": "存在しない選手", "roster_membership_id": "rm-a1", "position_ids": ["pos-flanker"], "bio": "存在しない選手への要求。" } }, "expected": { "error": "NOT_FOUND", "no_state_change": true } },
+    { "id": "rej-13-draft-private-and-invalid-fields", "after": "seed", "actor": "actor-a-editor", "operation": "draft.create", "input": { "player_id": "player-a1", "fields": { "display_name": "", "roster_membership_id": "rm-a1", "position_ids": ["pos-flanker"], "bio": "非公開フィールドを紹介に混ぜる入力。", "birthday": "1998-05-05", "contact_email": "player-a1@example.invalid" } }, "expected": { "error": "INVALID_INPUT", "fields": { "display_name": "required", "birthday": "unknown_field", "contact_email": "unknown_field" }, "no_state_change": true } },
+    { "id": "rej-14-draft-update-stale-head", "after": "op-06-update-draft-a1-r2", "actor": "actor-a-editor", "operation": "draft.update", "input": { "player_id": "player-a1", "expected_head_revision_id": "rev-a1-r1", "fields": { "display_name": "架空選手A1", "roster_membership_id": "rm-a1", "position_ids": ["pos-flanker"], "bio": "古い head を前提にした更新。" } }, "expected": { "error": "REVISION_CONFLICT", "current_head_revision_id": "rev-a1-r2", "no_state_change": true } },
+    { "id": "rej-15-publish-stale-expected", "after": "op-06-update-draft-a1-r2", "actor": "actor-a-publisher", "operation": "publish", "input": { "revision_id": "rev-a1-r2", "expected_current_revision_id": null }, "expected": { "error": "REVISION_CONFLICT", "current_revision_id": "rev-a1-r1", "no_state_change": true } },
+    { "id": "rej-16-publish-non-head", "after": "op-06-update-draft-a1-r2", "actor": "actor-a-publisher", "operation": "publish", "input": { "revision_id": "rev-a1-r1", "expected_current_revision_id": "rev-a1-r1" }, "expected": { "error": "REVISION_CONFLICT", "current_head_revision_id": "rev-a1-r2", "no_state_change": true } },
+    { "id": "rej-17-public-read-cross-club", "after": "seed", "actor": "actor-anonymous", "operation": "public.list_and_detail", "input": { "site_club_id": "club-a", "public_id": "pub-b-001" }, "expected": { "result": "ok", "list_output": "exp-public-list-a-empty", "detail_output": "exp-public-detail-not-found", "club_b_list_unchanged": "exp-public-list-b-r1" } }
+  ]
+}
