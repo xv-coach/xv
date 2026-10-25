@@ -1,3 +1,10 @@
+# Claude Code / AI agent のローカル状態
+.claude/settings.local.json
+.claude/agent-memory-local/
+.claude/worktrees/
+*.local.json
+CLAUDE.local.md
+
 *.log
 static
 .env
