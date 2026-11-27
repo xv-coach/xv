@@ -130,3 +130,58 @@ def test_foul_event_cross_match_references_are_invalid(
     with pytest.raises(ValidationError) as exc:
         event.full_clean()
     assert error_fields(exc) == {'player', 'out_event', 'penalty_try'}
+
+
+@pytest.mark.parametrize('player_is_other', [False, True])
+@pytest.mark.parametrize('out_origin', ['same', 'other', 'none'])
+@pytest.mark.parametrize('try_origin', ['same', 'other', 'none'])
+def test_foul_event_reference_errors_are_independent(
+    match_setup: MatchSetup,
+    other_match_setup: MatchSetup,
+    player_is_other: bool,
+    out_origin: str,
+    try_origin: str,
+) -> None:
+    setups = {'same': match_setup, 'other': other_match_setup}
+    player = (other_match_setup if player_is_other else match_setup).away_player
+    out_setup = setups.get(out_origin)
+    try_setup = setups.get(try_origin)
+    out_event = (
+        baker.make(
+            MatchSwitchEvent, half=out_setup.half, out_member=out_setup.away_player
+        )
+        if out_setup is not None
+        else None
+    )
+    penalty_try = (
+        baker.make(
+            MatchScoringEvent, half=try_setup.half, player=try_setup.home_player
+        )
+        if try_setup is not None
+        else None
+    )
+    event = baker.prepare(
+        MatchFoulEvent,
+        half=match_setup.half,
+        player=player,
+        out_event=out_event,
+        penalty_try=penalty_try,
+        card_choice=MatchFoulEvent.Card.YELLOW,
+        _save_related=True,
+    )
+    # Every foreign relation is reported; a missing optional relation is not an error.
+    expected = {
+        field
+        for field, is_other in (
+            ('player', player_is_other),
+            ('out_event', out_origin == 'other'),
+            ('penalty_try', try_origin == 'other'),
+        )
+        if is_other
+    }
+    if expected:
+        with pytest.raises(ValidationError) as exc:
+            event.full_clean()
+        assert error_fields(exc) == expected
+    else:
+        event.full_clean()
